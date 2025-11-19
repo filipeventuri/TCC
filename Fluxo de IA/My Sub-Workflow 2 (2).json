@@ -1,0 +1,580 @@
+{
+  "name": "My Sub-Workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "id",
+              "type": "any"
+            },
+            {
+              "name": "query"
+            },
+            {
+              "name": "phone"
+            }
+          ]
+        }
+      },
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        272,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        640
+      ],
+      "id": "e43ab9ff-54ab-4cfb-a368-b51be1f89f2c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um agente financeiro responsável por gerar relatórios organizados para envio via WhatsApp.\n\nVerifique a {{ $json.mensagem }}, se for a uma mensagem informando que foi feito um gasto ou uma receita, o output será FALSE.\n\nSe o usuário solicitar um historico de as receitas, entenda como renda. (Ou seja, se o usuário solicitar um relatorio com as receitas, gere somente com as rendas.)\n\n1. Interprete a mensagem do usuário: {{ $json.mensagem }}.\n2. Utilize as tools \"Renda\" e \"Gasto\" **apenas uma vez cada** para obter as informações.\n3. Verifique se o usuário solicitou:\n   - filtro por data\n   - filtro por categoria\n   - resumo geral\n   - relatório detalhado\n   - ordenação cronológica\n\n4. Monte o relatório seguindo a estrutura:\n   A) Título\n   B) Período (caso especificado)\n   C) Tabela de Receitas e Tabela de Gastos SEPARADAS.\n   D) Se o usuário pedir ordem cronológica, liste item por item em ordem de data.\n   E) Resumo numérico (Receita Total, Despesa Total, Saldo).\n   F) Insights (2 a 4 recomendações diretas).\n\n5. **Formato de Tabela WhatsApp (sem markdown):**\n\nReceitas:\nFonte | Valor (R$) | Data\n...\n\nGastos:\nCategoria | Valor (R$) | Data | Descrição\n...\n\n6. Seja direto, claro, sem emojis.\n7. O relatório deve ficar legível em celular e não pode vir “embolado”.\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        352
+      ],
+      "id": "24a95372-9c2f-4ff1-874d-0773ade857d9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9ac3de49-3f42-4e9c-b58a-7c558d9af017",
+              "name": "userId",
+              "value": "={{ $json.id['$oid'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c3f93d48-a2dc-4e19-91f7-3f34eb2522b6",
+              "name": "mensagem",
+              "value": "={{ $json.query }}",
+              "type": "string"
+            },
+            {
+              "id": "3e6215ab-1dda-43a1-ab2b-77cfdfe51153",
+              "name": "phone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        352
+      ],
+      "id": "4bbe3725-8b2e-4cd4-8611-ebc4ed5431e7",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Execute somente uma vez e traga os dados",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/income/n8n/",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        912,
+        640
+      ],
+      "id": "69f92380-6e88-404f-adbd-20997ecbe116",
+      "name": "Renda"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Execute somente uma vez e traga os dados",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/expense/n8ngetexpense",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1104,
+        640
+      ],
+      "id": "d3197094-065b-4caa-beef-9862dcb418ea",
+      "name": "Gasto"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.phone }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1472,
+        224
+      ],
+      "id": "09cd6a0d-3d0a-4e4f-9098-16daf4d58a6a",
+      "name": "Resposta2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        816
+      ],
+      "id": "f21ada22-5530-4a7d-891c-04769ddc36cb",
+      "name": "Create a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "lMlwRj4QxjqGtgw9",
+          "name": "Google Docs account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "1FmR-IQd828ANzyJfOu6vcAKB-vWQbnDi33Kem44olIg",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        2192,
+        816
+      ],
+      "id": "5ce83ac5-2083-4deb-953a-cc3faeb91ced",
+      "name": "Update a document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "lMlwRj4QxjqGtgw9",
+          "name": "Google Docs account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=A partir do {{ $json.output }},utilize a tool \"CriarDocumento\" um documento no Google Docs. \n\nDepois, use a tool \"AtualizarDocumento\" para colocar o conteúdo dentro do documento gerado pela tool \"Criar documento\"",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        416
+      ],
+      "id": "239ba8c2-1e9a-482c-bf14-8f951b7c48d8",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "folderId": "default",
+        "title": "Relatório"
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        1984,
+        656
+      ],
+      "id": "28d465e4-ff0c-4208-8bea-9390a038545d",
+      "name": "CriarDocumento",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "lMlwRj4QxjqGtgw9",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        656
+      ],
+      "id": "72bc46bc-885d-41c8-aa09-62b9d24e39d5",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "1Vc9XTvOLXO3YCjQJIbUSNgiWuARz0IRJeetBFyV-H-o",
+        "simple": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Simplify', ``, 'boolean') }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        656
+      ],
+      "id": "f4d6ed77-cbcd-43ee-af90-c8b347f45571",
+      "name": "AtualizarDocumento",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "lMlwRj4QxjqGtgw9",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1Vc9XTvOLXO3YCjQJIbUSNgiWuARz0IRJeetBFyV-H-o",
+          "mode": "id"
+        },
+        "name": "=Relatorio {{ $('Edit Fields').item.json.phone }}{{ $now.format('yyyy-MM-dd') }}",
+        "sameFolder": false,
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "17EkVGtYkpLBTDRHcHvvVpiKoLpz3UKXf",
+          "mode": "list",
+          "cachedResultName": "Analise",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/17EkVGtYkpLBTDRHcHvvVpiKoLpz3UKXf"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTool",
+      "typeVersion": 3,
+      "position": [
+        2112,
+        656
+      ],
+      "id": "d319cd8a-1638-494f-8786-ce62e07dfb1e",
+      "name": "Copy file in Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "jKV3x2PBYIQ4D6MJ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d1ceaf18-ae90-409c-8ec9-d831c7c41233",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "FALSE",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1232,
+        352
+      ],
+      "id": "656392eb-83f2-4efc-816c-12c5742e11df",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        464
+      ],
+      "id": "0b1f7a1b-9954-45e2-a7d2-0978e99f565d",
+      "name": "No Operation, do nothing"
+    }
+  ],
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "id": {
+            "$oid": "690a85c6c21542d2f52dcf84"
+          },
+          "query": "Gere o meu relatório financeiro dos últimos 15 dias.",
+          "phone": "71997052483"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Renda": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gasto": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta2": {
+      "main": [
+        []
+      ]
+    },
+    "Create a document": {
+      "main": [
+        [
+          {
+            "node": "Update a document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CriarDocumento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AtualizarDocumento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy file in Google Drive": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Resposta2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dcbfca11-ca9b-4da6-b166-bf517f5a1041",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf9d09873b902b02a83144b332a29fd7e2d70e4e82e219bd038235dffac24700"
+  },
+  "id": "6SWnHKJlkyVnyGLi",
+  "tags": []
+}

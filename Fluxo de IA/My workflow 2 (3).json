@@ -1,0 +1,2706 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chamada",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        -32
+      ],
+      "id": "22ea9219-8649-4509-be60-72732029022d",
+      "name": "Webhook",
+      "webhookId": "5ec372c5-53e1-4504-b48a-15f4bf4c349f"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.imagem }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "68c6a2ef-5f21-4f94-a1a9-3b305f546e26"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b4cc736e-4f60-47a8-8e39-c8d6847f6a58",
+                    "leftValue": "={{ $json.texto }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "8313bca7-d7b5-439d-8d26-6c6d9ab40102",
+                    "leftValue": "={{ $json.Audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1760,
+        48
+      ],
+      "id": "178d3c23-bcc1-44f8-bae8-7f1b75752672",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "text": "=horário: {{ $now }} \n\nIdentifique na imagem o valor total da compra, data e hora (se não encontrar, utilize a data e hora atual), categoria (caso seja de um posto de gasolina, categorize como \"Carro\"), identifique e registre o tipo de movimentação se é uma 'despesa' ou uma 'receita'. Retorne os dados encontrados no formato de documento Ex:\n\n{ \"userId\": \"{{ $('Agrupa informações').item.json.id }}\",\n\"icon\": \"\",\n\"category\": \"INFORME A CATEGORIA\",\n\"amount\": \"(Informe o valor do gasto no tipo number)\",\n\"date\": \"(Caso não encontre a informação no texto, utilize a data que atual no formato date)\",\n\"categoria\": \"(INFORME A CATEGORIA)\"}\n\n*CATEGORIAS*\nLazer, Alimentação, Cuidados Pessoais, Despesa, Receita, Saúde, Compras, Casa e Outros.\n\n*ATENÇÂO*\nCaso não identifique as informações necessárias na imagem, retorne FALSE. ",
+        "imageUrls": "={{ $json.imagem }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        1984,
+        -624
+      ],
+      "id": "e6987872-be33-4a91-ac0a-7aca913bc041",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2208,
+        640
+      ],
+      "id": "b62b4e72-8da2-40d7-9f2c-1a76603802b8",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.Audio }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1984,
+        640
+      ],
+      "id": "69f56d81-8849-44f5-814e-5be8869767bd",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=horário: {{ $now }}\nAnalise o conteúdo recebido em {{ $json.text }}.\n\n⚠️ **INSTRUÇÃO CRÍTICA**\nAntes de tentar gerar qualquer JSON, determine se a mensagem realmente fala sobre **um gasto (despesa)** ou **uma receita (entrada)**.\n\n\n\nSe o texto for uma solicitação de informações sobre os gastos ou receitas do usuário (EX: relatório financeiro), use a tool \"SubFluxo\" e encerre. Agora se não for, siga os proximos comandos.\n\nSe o texto for apenas uma saudação, comentário, localização ou frase sem contexto financeiro (ex: “passei hoje na 25 de março”, “oi”, “tudo bem”, “como funciona”, “ajuda”, “olá minha wallet”),  \nou se não conseguir identificar valor, tipo de movimentação, categoria ou fonte, **retorne imediatamente o seguinte output simples:\"erro\"**\n\n🧠 Caso a mensagem realmente contenha informações financeiras, identifique e extraia:\n\n- **Valor total da movimentação**\n- **Data e hora** (se não encontrar, use data e hora atual em formato ISO)\n- **Categoria ou Fonte**\n- **Estabelecimento ou Origem**\n- **Tipo de movimentação** (\"Despesa\" ou \"Receita\")\n\n📦 **Envie o JSON no campo `dados` exatamente neste formato (sem explicações, sem markdown, sem “```json”):**\n\n➡️ **Se for uma DESPESA**\n{\n  \"userId\": \"{{ $('Agrupa informações').item.json.id.$oid }}\",\n  \"icon\": \"\",\n  \"category\": \"CATEGORIA\",\n  \"amount\": VALOR_TOTAL,\n  \"date\": \"DATA_ISO\",\n  \"details\": \"Descrição curta da origem do gasto\",\n  \"tipoMovimentacao\": \"Despesa\"\n}\n\n➡️ **Se for uma RECEITA**\n{\n  \"userId\": \"{{ $('Agrupa informações').item.json.id.$oid }}\",\n  \"icon\": \"\",\n  \"source\": \"FONTE_RECEITA\",\n  \"amount\": VALOR_TOTAL,\n  \"date\": \"DATA_ISO\",\n  \"details\": \"Descrição curta da origem da receita\",\n  \"tipoMovimentacao\": \"Receita\"\n}\n\n---\n\n### 📏 REGRAS GERAIS\n- **userId:** deve ser string de 24 caracteres hexadecimais.\n- **icon:** Utilize os seguintes links a depender da categoria ou source:\n\n{Verifique o category e utilize um dos links abaixo como icon.\nAlimentação: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f354.png\n\nCarro: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f697.png\n\nLazer: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3dd-fe0f.png\n\nMoradia: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3e1.png\n\nSaúde: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3e5.png\n\nOutros: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f310.png}\n\n{Verifique o Source e utilize um dos links abaixo como icon.\nSalário: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4b8.png\n\nAposta: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3b2.png\n\nPresente: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f381.png\n\nInvestimento: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4ca.png\n\nFreela: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f5e3-fe0f.png\n\nOutros: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f310.png}\n- **amount:** número (ex: 230.75).\n- **date:** formato ISO (`2025-11-02T19:00:00.000Z`).\n- **details:** pequena descrição obrigatória.\n- **tipoMovimentacao:** \"Despesa\" ou \"Receita\".\n\n---\n\n### 🟥 Regras para DESPESAS\n- combustível, gasolina, posto, abastecimento → **Carro**\n- comida, refeição, restaurante, mercado → **Alimentação**\n- remédio, hospital → **Saúde**\n- luz, água, aluguel, condomínio → **Moradia**\n- cinema, viagem, lazer → **Lazer**\n- se não identificar → **Outros**\n\n### 🟩 Regras para RECEITAS\n- aposta, prêmio → **Aposta**\n- freela, bico → **Freela**\n- investimento, rendimento → **Investimento**\n- presente, doação → **Presente**\n- se não identificar → **Outros**\n\n---\n\n### 💬 Exemplos:\n**Entrada:** “Gastei 45 reais no mercado hoje à tarde”  \n✅ **Saída:**\n{\n  \"userId\": \"665a5e13f97b8d2c2b9b91aa\",\n  \"icon\": \"\",\n  \"category\": \"Alimentação\",\n  \"amount\": 45,\n  \"date\": \"2025-11-09T12:00:00.000Z\",\n  \"details\": \"Gasto no mercado\",\n  \"tipoMovimentacao\": \"Despesa\"\n}\n\n**Entrada:** “Ganhei 200 reais de um freela hoje”  \n✅ **Saída:**\n{\n  \"userId\": \"665a5e13f97b8d2c2b9b91aa\",\n  \"icon\": \"\",\n  \"source\": \"Freela\",\n  \"amount\": 200,\n  \"date\": \"2025-11-09T12:00:00.000Z\",\n  \"details\": \"Renda de trabalho freelancer\",\n  \"tipoMovimentacao\": \"Receita\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        640
+      ],
+      "id": "5484b071-678c-40bb-98f2-0d0256c8c708",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "38378eaf-5af1-4af6-a238-182c44ea0339",
+              "name": "whatsapp",
+              "value": "={{ JSON.parse($json.body.phone) }}",
+              "type": "string"
+            },
+            {
+              "id": "5dc4f11b-7b77-4816-bda5-be9977057b1b",
+              "name": "texto",
+              "value": "={{ $json.body.text.message }}",
+              "type": "string"
+            },
+            {
+              "id": "776b45ad-1a0a-4f96-89f1-6fb21205f4b6",
+              "name": "Imagem",
+              "value": "={{ $json.body.image.imageUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "c345a1fd-7cf2-422f-bceb-bacd8cf0884c",
+              "name": "Audio",
+              "value": "={{ $json.body.audio.audioUrl }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        64
+      ],
+      "id": "f1732b94-550c-4b5f-bb8c-f585466c0bf2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "push",
+        "list": "={{ $json.phone }}",
+        "messageData": "={{ $json.texto }}",
+        "tail": "={{ true }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        112
+      ],
+      "id": "6f849c13-a094-42c5-8357-36bb0ca2f1e6",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "fLZ1ep8cagqC5WyF",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2208,
+        112
+      ],
+      "id": "4ddb68a7-cc3b-4494-b647-641fcd1f9407",
+      "name": "Wait",
+      "webhookId": "fd7acccb-a1f5-403c-a2f0-69fe0bfd29f9"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "mensagens",
+        "key": "={{ $json.phone }}",
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        2496,
+        112
+      ],
+      "id": "ca89e3d6-e144-4684-8c81-05afdde369b6",
+      "name": "Redis1",
+      "credentials": {
+        "redis": {
+          "id": "fLZ1ep8cagqC5WyF",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3953482b-b6c0-41ee-81b5-13f1ec9c4d6a",
+              "leftValue": "={{ $json.mensagens.last() }}",
+              "rightValue": "={{ $('Wait').item.json.texto }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2784,
+        112
+      ],
+      "id": "3d7b8f5c-fef7-44d5-8ecd-8f88bdf461f1",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3008,
+        160
+      ],
+      "id": "9c8c4fcf-cdeb-42dd-ade3-7b8e73f85379",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ $json.whatsapp }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        3232,
+        -32
+      ],
+      "id": "7248ad45-7a0b-4954-8af0-b16d0a716518",
+      "name": "Redis2",
+      "credentials": {
+        "redis": {
+          "id": "fLZ1ep8cagqC5WyF",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "da259532-0cd1-4945-85e0-2f73a8774889",
+              "leftValue": "={{ $json.content }}",
+              "rightValue": "FALSE",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        -624
+      ],
+      "id": "4c84a3c1-adea-40ef-90b7-cb8f25484f4e",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2432,
+        848
+      ],
+      "id": "40fb9765-a014-4b3b-8527-126f8ac781e7",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "101efac9-6b66-4950-99a5-75666e44f0de",
+              "name": "mensagens[0]",
+              "value": "={{ $json.mensagens.join('\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "33946a8a-2bfa-4a0d-834c-ef29b61c06d0",
+              "name": "whatsapp",
+              "value": "={{ $('Wait').item.json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "bc0c7995-5fa6-4bc8-b109-e99a8e8ea482",
+              "name": "id",
+              "value": "={{ $('Switch').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3008,
+        -32
+      ],
+      "id": "c47225a6-b131-4082-b605-41dafb5a1471",
+      "name": "Agrupa"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=horário: {{ $now }}\nAnalise o conteúdo recebido em {{ $json.mensagens }}.\n\n⚠️ **INSTRUÇÃO CRÍTICA**\nCASO O CLIENTE SOLICITE ENTENDER OS COMANDOS UTILIZAR PARA INTEGRAÇÂO NO WHATSAPP, NÂO RESPONDA, somente dê erro.\nAntes de tentar gerar qualquer JSON, determine se a mensagem realmente fala sobre **um gasto (despesa)** ou **uma receita (entrada)**.\n\nSe o texto for uma solicitação de informações sobre os gastos ou receitas do usuário (EX: relatório financeiro), use a tool \"SubFluxo1\" e encerre. Agora se não for, siga os proximos comandos.\n\nSe o texto for apenas uma saudação, comentário, localização ou frase sem contexto financeiro (ex: “passei hoje na 25 de março”, “oi”, “tudo bem”, “como funciona”, “ajuda”, “olá minha wallet”),  \nou se não conseguir identificar valor, tipo de movimentação, categoria ou fonte, **retorne imediatamente o seguinte output simples:\"erro\"**\n\n🧠 Caso a mensagem realmente contenha informações financeiras, identifique e extraia:\n\n- **Valor total da movimentação**\n- **Data e hora** (se não encontrar, use data e hora atual em formato ISO)\n- **Categoria ou Fonte**\n- **Estabelecimento ou Origem**\n- **Tipo de movimentação** (\"Despesa\" ou \"Receita\")\n\n📦 **Envie o JSON no campo `dados` exatamente neste formato (sem explicações, sem markdown, sem “```json”):**\n\n➡️ **Se for uma DESPESA**\n{\n  \"userId\": \"{{ $('Agrupa informações').item.json.id.$oid }}\",\n  \"icon\": \"\",\n  \"category\": \"CATEGORIA\",\n  \"amount\": VALOR_TOTAL,\n  \"date\": \"DATA_ISO\",\n  \"details\": \"Descrição curta da origem do gasto\",\n  \"tipoMovimentacao\": \"Despesa\"\n}\n\n➡️ **Se for uma RECEITA**\n{\n  \"userId\": \"{{ $('Agrupa informações').item.json.id.$oid }}\",\n  \"icon\": \"\",\n  \"source\": \"FONTE_RECEITA\",\n  \"amount\": VALOR_TOTAL,\n  \"date\": \"DATA_ISO\",\n  \"details\": \"Descrição curta da origem da receita\",\n  \"tipoMovimentacao\": \"Receita\"\n}\n\n---\n\n### 📏 REGRAS GERAIS\n- **userId:** deve ser string de 24 caracteres hexadecimais.\n- **icon:** Utilize os seguintes links a depender da categoria ou source:\n\n{Verifique o category e utilize um dos links abaixo como icon.\nAlimentação: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f354.png\n\nCarro: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f697.png\n\nLazer: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3dd-fe0f.png\n\nMoradia: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3e1.png\n\nSaúde: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3e5.png\n\nOutros: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f310.png}\n\n{Verifique o Source e utilize um dos links abaixo como icon.\nSalário: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4b8.png\n\nAposta: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3b2.png\n\nPresente: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f381.png\n\nInvestimento: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4ca.png\n\nFreela: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f5e3-fe0f.png\n\nOutros: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f310.png}\n- **amount:** número (ex: 230.75).\n- **date:** formato ISO (`2025-11-02T19:00:00.000Z`).\n- **details:** pequena descrição obrigatória.\n- **tipoMovimentacao:** \"Despesa\" ou \"Receita\".\n\n---\n\n### 🟥 Regras para DESPESAS\n- combustível, gasolina, posto, abastecimento → **Carro**\n- comida, refeição, restaurante, mercado → **Alimentação**\n- remédio, hospital → **Saúde**\n- luz, água, aluguel, condomínio → **Moradia**\n- cinema, viagem, lazer → **Lazer**\n- se não identificar → **Outros**\n\n### 🟩 Regras para RECEITAS\n- aposta, prêmio → **Aposta**\n- freela, bico → **Freela**\n- investimento, rendimento → **Investimento**\n- presente, doação → **Presente**\n- se não identificar → **Outros**\n\n---\n\n### 💬 Exemplos:\n**Entrada:** “Gastei 45 reais no mercado hoje à tarde”  \n✅ **Saída:**\n{\n  \"userId\": \"665a5e13f97b8d2c2b9b91aa\",\n  \"icon\": \"\",\n  \"category\": \"Alimentação\",\n  \"amount\": 45,\n  \"date\": \"2025-11-09T12:00:00.000Z\",\n  \"details\": \"Gasto no mercado\",\n  \"tipoMovimentacao\": \"Despesa\"\n}\n\n**Entrada:** “Ganhei 200 reais de um freela hoje”  \n✅ **Saída:**\n{\n  \"userId\": \"665a5e13f97b8d2c2b9b91aa\",\n  \"icon\": \"\",\n  \"source\": \"Freela\",\n  \"amount\": 200,\n  \"date\": \"2025-11-09T12:00:00.000Z\",\n  \"details\": \"Renda de trabalho freelancer\",\n  \"tipoMovimentacao\": \"Receita\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        3456,
+        -144
+      ],
+      "id": "ec6f7e17-93d4-4220-9492-11a4c6f59886",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3456,
+        80
+      ],
+      "id": "9273949e-f58c-4462-b307-3bdf89e11e2a",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "collection": "users",
+        "options": {},
+        "query": "={{ JSON.stringify({ phone: $json.whatsapp }) }}"
+      },
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1.2,
+      "position": [
+        1312,
+        64
+      ],
+      "id": "4f8da0f1-32e5-4d4b-9eef-ce55b6a3770e",
+      "name": "Find documents",
+      "credentials": {
+        "mongoDb": {
+          "id": "t4GqXaDUlBCMwqdp",
+          "name": "MongoDB account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "instructions": "Quero que você pegue o número de whatsapp que vem no webhook e trato no edit field e adiciona um  9 depois do numero de regiao e também retire o 55 de inicio. Por exemplo:\nPrimeiro retire o 55 do início, saindo de 557197052483 para 7197052483.\n\nDepois adicione o 9 depois do número de região. Saindo de 7197052483 para 71997052483\n\nUse o objeto whatsapp",
+        "codeGeneratedForPrompt": "Quero que você pegue o número de whatsapp que vem no webhook e trato no edit field e adiciona um  9 depois do numero de regiao e também retire o 55 de inicio. Por exemplo:\nPrimeiro retire o 55 do início, saindo de 557197052483 para 7197052483.\n\nDepois adicione o 9 depois do número de região. Saindo de 7197052483 para 71997052483\n\nUse o objeto whatsapp",
+        "jsCode": "const items = $input.all();\nconst updatedItems = items.map((item) => {\n  const whatsappNumber = item?.json?.whatsapp;\n  if (whatsappNumber) {\n    const numberWithoutCountryCode = whatsappNumber.substring(2);\n    const updatedNumber =\n      numberWithoutCountryCode.slice(0, 2) +\n      \"9\" +\n      numberWithoutCountryCode.slice(2);\n    item.json.whatsapp = updatedNumber;\n  }\n  return item;\n});\nreturn updatedItems;\n"
+      },
+      "type": "n8n-nodes-base.aiTransform",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        64
+      ],
+      "id": "1a94a688-ba15-4469-a43f-1ae81d5c6798",
+      "name": "AI Transform"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1a6a044f-ae5e-4482-a0b7-03ab38a4e7c0",
+              "name": "id",
+              "value": "={{ { \"$oid\": $json._id } }}",
+              "type": "object"
+            },
+            {
+              "id": "eb571fb9-6b91-42af-9725-74641c152c4f",
+              "name": "phone",
+              "value": "={{ $('AI Transform').item.json.whatsapp }}",
+              "type": "string"
+            },
+            {
+              "id": "53625658-eb7f-4500-b19f-3d6d35597766",
+              "name": "texto",
+              "value": "={{ $('Edit Fields').item.json.texto }}",
+              "type": "string"
+            },
+            {
+              "id": "6f0a2c6b-9a65-46a2-a961-86182607b12c",
+              "name": "imagem",
+              "value": "={{ $('Edit Fields').item.json.Imagem }}",
+              "type": "string"
+            },
+            {
+              "id": "b50d9134-66e6-4f2d-8dd4-cebb5e0baf3c",
+              "name": "Audio",
+              "value": "={{ $('Edit Fields').item.json.Audio }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1536,
+        64
+      ],
+      "id": "dca3ec89-acd3-4800-843d-9aae53de5f38",
+      "name": "Agrupa informações"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.whatsapp }}"
+            },
+            {
+              "name": "message",
+              "value": "=Não foi possível identificar as informações necessárias na imagem. Poderia fornecer uma imagem mais nítida onde podemos encontrar as informações dos gastos, por favor?"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2496,
+        -768
+      ],
+      "id": "16dc7b9b-0499-4d00-99f8-8e0ab42c66bf",
+      "name": "Resposta3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2784,
+        -768
+      ],
+      "id": "cef0cf05-c232-4e33-86c9-797109b153a1",
+      "name": "No Operation, do nothing1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=horário: {{ $now }}  \nAnalise o conteúdo recebido em {{ $json.content }}.\n\nIdentifique e extraia as seguintes informações do texto:\n- **Valor total da movimentação**\n- **Data e hora** (se não encontrar, utilize a data e hora atual no formato ISO)\n- **Categoria ou Fonte**:\n  - Se for uma **despesa (gasto)**, identifique a **categoria do gasto** (Ex: Alimentação, Carro, Lazer, Moradia, Saúde, Outros).\n  - Se for uma **receita (entrada)**, identifique a **fonte da receita** (Ex: Salário, Aposta, Freela, Investimento, Presente, Outros).\n- **Estabelecimento ou Origem** (se não houver, deixe vazio)\n- **Tipo de movimentação**: identificar se é uma `\"Despesa\"` ou uma `\"Receita\"`\n\n📦 **Envie o JSON no campo `dados` exatamente neste formato (sem explicações adicionais):**\n\n** O output não deve vir com \"```json\\ no inicio.\n\n➡️ **Se for uma DESPESA:**\n{\n  \"userId\": \"{{ $('Agrupa informações').item.json.id.$oid }}\",\n  \"icon\": \"\",\n  \"category\": \"CATEGORIA\",\n  \"amount\": VALOR_TOTAL,\n  \"date\": \"DATA_ISO\",\n  \"details\": \"Rápida descrição da origem do gasto\",\n  \"tipoMovimentacao\": \"Despesa\"\n}\n\n** Se for uma RECEITA** \n\n{\n  \"userId\": \"{{ $('Agrupa informações').item.json.id.$oid }}\",\n  \"icon\": \"\",\n  \"source\": \"FONTE_RECEITA\",\n  \"amount\": VALOR_TOTAL,\n  \"date\": \"DATA_ISO\",\n  \"details\": \"Rápida descrição da origem da receita, Ex: Renda referente ao salário do mes atual(crie váriações)\",\n  \"tipoMovimentacao\": \"Receita\"\n}\n\n\n**REGRAS**\n\nO campo icon: Utilize os seguintes links a depender da categoria ou source:\n\n{Verifique o category e utilize um dos links abaixo como icon.\nAlimentação: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f354.png\n\nCarro: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f697.png\n\nLazer: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3dd-fe0f.png\n\nMoradia: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3e1.png\n\nSaúde: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3e5.png\n\nOutros: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f310.png}\n\n{Verifique o Source e utilize um dos links abaixo como icon.\nSalário: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4b8.png\n\nAposta: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f3b2.png\n\nPresente: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f381.png\n\nInvestimento: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4ca.png\n\nFreela: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f5e3-fe0f.png\n\nOutros: https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f310.png}\n\n\nuserId deve ser uma string de 24 caracteres hexadecimais (ObjectId).\n\namount deve ser Number (ex: 230.75).\n\ndate deve estar em formato ISO string (ex: \"2025-11-02T19:00:00.000Z\").\n\ndetails corresponde ao nome do estabelecimento (ou origem da receita).\n\ntipoMovimentacao deve ser sempre \"Despesa\" ou \"Receita\".\n\n🟥 Regras específicas para DESPESAS:\n\nCaso o texto mencione combustível, gasolina, posto ou abastecimento, defina category como \"Carro\".\n\nCaso o texto mencione comida, refeição, restaurante ou mercado, defina category como \"Alimentação\".\n\nCaso o texto mencione remédio ou hospital, defina category como \"Saúde\".\n\nCaso o texto mencione luz, água, aluguel ou condomínio, defina category como \"Moradia\".\n\nCaso o texto mencione cinema, viagem ou lazer, defina category como \"Lazer\".\n\nCaso não identifique a categoria, defina como \"Outros\".\n\nEsse campo é obrigatório — se não conseguir determinar, defina \"Outros\".\n\n\n\nO campo details é obrigatório e deve vir com uma pequena frase descrevendo\n\n🟩 Regras específicas para RECEITAS:\n\nO CAMPO SOURCE É OBRIGATÓRIO E NÃO ACEITA NULL. \n\nCaso o texto mencione aposta, freela, investimento ou prêmio, defina source como \"Aposta\", \"Freela\", \"Investimento\", \"Prêmio\", conforme o contexto.\n\nCRIE BASEADO NA MENSAGEM DO CLIENTE.\n\nCaso não identifique a fonte, defina como \"Outros\".\nO campo details é obrigatório e deve vir com uma pequena frase descrevendo\n\n🧱 Execução:\n\nUse a tool \"registraDados\" somente uma vez por execução.\n\nGaranta que amount, date, tipoMovimentacao, userId e category (ou source, conforme o tipo) estejam presentes e válidos antes de registrar.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        2432,
+        -480
+      ],
+      "id": "b165f77c-fed3-4706-b77c-2b604a7fd605",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        2512,
+        -256
+      ],
+      "id": "b48f9ad1-7fc4-417e-93a6-39c961c16ef0",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('AI Agent').item.json.output }} A partir desse output, crie uma mensagem de retorno ao cliente dizendo que registrou o gastos ou receita dele. \n\nNão quero que enviei que entendeu e nada a mais do que a parte do registro.\n\nNunca repita a mesma forma de resposta para o whatsapp não identificar que é IA. Só repita o tipo de resposta após um tempo de respostas diferentes.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        3808,
+        496
+      ],
+      "id": "1c4e39ce-ec00-4a43-8153-90905a252241",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------------------------------------------------------------\n// 🔧 Funções auxiliares\n// -----------------------------------------------------------------------------\nfunction toObjectId(id) {\n  // Just validate and return the 24-character hex string as-is\n  return (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id))\n    ? id\n    : id;\n}\n\nfunction toNativeDate(value) {\n  const d = new Date(value);\n  return isNaN(d.getTime()) ? new Date() : d;\n}\n\n// -----------------------------------------------------------------------------\n// 🔄 Processamento principal\n// -----------------------------------------------------------------------------\nconst now = new Date();\nconst items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.dados ?? item.json.output ?? item.json;\n  const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;\n\n  return {\n    json: {\n      userId: toObjectId(parsed.userId),     // ✅ ObjectId real (não $oid)\n      icon: parsed.icon || \"\",\n      category: parsed.category || \"\",\n      amount: Number(parsed.amount ?? 0),\n      date: toNativeDate(parsed.date),\n      details: parsed.details || \"\",\n      tipoMovimentacao: parsed.tipoMovimentacao || \"\",\n      createdAt: now,\n      updatedAt: now,\n      __v: 0\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        352
+      ],
+      "id": "2b0d1f87-0623-4748-9135-1dd1b9dc1ad8",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d426a314-33b7-4b14-9efa-b561dab46f2c",
+              "name": "userId",
+              "value": "={{ $json.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "2748c91a-ffe3-4c1c-829a-23fffab1fd34",
+              "name": "icon",
+              "value": "={{ $json.icon }}",
+              "type": "string"
+            },
+            {
+              "id": "934937ef-f89f-48a8-917d-6bbd2bb3f2b6",
+              "name": "category",
+              "value": "={{ $json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "d81bfde5-d42d-4c55-addf-007ddeec7a8d",
+              "name": "amount",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3d3e7e08-744c-4eb1-9eb0-01d0a77fce36",
+              "name": "date",
+              "value": "={{ { \"$date\": $json.createdAt } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3232,
+        352
+      ],
+      "id": "684f5204-ab89-4ce3-bbf5-42e6314a357b",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/expense/n8n",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "icon",
+              "value": "={{ $json.icon }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date.$date }}"
+            },
+            {
+              "name": "=details",
+              "value": "={{ $('Code in JavaScript3').item.json.details }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        352
+      ],
+      "id": "e3e1681a-e42a-4285-a610-ca88e0369307",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.whatsapp }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5184,
+        -128
+      ],
+      "id": "6087805e-ae13-4b27-a58b-23e1eff2086a",
+      "name": "Resposta1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('AI Agent1').item.json.output }} A partir desse output, crie uma mensagem de retorno ao cliente dizendo que registrou o gastos ou receita dele. \n\nNão quero que enviei que entendeu e nada a mais do que a parte do registro.\n\nNunca repita a mesma forma de resposta para o whatsapp não identificar que é IA. Só repita o tipo de resposta após um tempo de respostas diferentes.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        4832,
+        -128
+      ],
+      "id": "0519a2ca-dfe8-4d6f-9526-a610f41d5049",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.whatsapp }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4160,
+        -480
+      ],
+      "id": "f604d989-839b-4695-8398-4aa617dcfcd0",
+      "name": "Resposta2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('AI Agent2').item.json.output }} A partir desse output, crie uma mensagem de retorno ao cliente dizendo que registrou o gastos ou receita dele. \n\nNão quero que enviei que entendeu e nada a mais do que a parte do registro.\n\nNão repita a mesma mensagem para não dar a entender que é uma IA.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        3808,
+        -480
+      ],
+      "id": "7fbebed0-ab78-41e6-a5ba-316459d96f13",
+      "name": "Basic LLM Chain2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3888,
+        720
+      ],
+      "id": "3cab65b2-43bd-4eb3-b50a-cc9e79fa585a",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        4912,
+        96
+      ],
+      "id": "aed51a36-bf8d-4014-a877-7d8cd5db54ff",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        3856,
+        -272
+      ],
+      "id": "5a6b2644-d6ec-4e36-bd7d-1428bc180c02",
+      "name": "OpenAI Chat Model5",
+      "credentials": {
+        "openAiApi": {
+          "id": "jelcSx6YQ72tnD5f",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.whatsapp }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4160,
+        496
+      ],
+      "id": "23c27074-a82b-4cce-9601-0b3298decbee",
+      "name": "Resposta"
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------------------------------------------------------------\n// 🔧 Funções auxiliares\n// -----------------------------------------------------------------------------\nfunction toObjectId(id) {\n  // Apenas valida e retorna o ID se for um hex válido de 24 caracteres\n  return (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id))\n    ? id\n    : id;\n}\n\nfunction toNativeDate(value) {\n  const d = new Date(value);\n  return isNaN(d.getTime()) ? new Date() : d;\n}\n\n// -----------------------------------------------------------------------------\n// 🔄 Processamento principal\n// -----------------------------------------------------------------------------\nconst now = new Date();\nconst items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.dados ?? item.json.output ?? item.json;\n  const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;\n\n  return {\n    json: {\n      userId: toObjectId(parsed.userId),\n      icon: parsed.icon || \"\",\n      source: parsed.source || \"\",\n      amount: Number(parsed.amount ?? 0),\n      date: toNativeDate(parsed.date),\n      details: parsed.details || \"\",\n      tipoMovimentacao: parsed.tipoMovimentacao || \"Receita\",\n      createdAt: now,\n      updatedAt: now,\n      __v: 0\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        544
+      ],
+      "id": "485a143b-3f4b-4bed-b794-67a708628201",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d426a314-33b7-4b14-9efa-b561dab46f2c",
+              "name": "userId",
+              "value": "={{ $json.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "2748c91a-ffe3-4c1c-829a-23fffab1fd34",
+              "name": "icon",
+              "value": "={{ $json.icon }}",
+              "type": "string"
+            },
+            {
+              "id": "934937ef-f89f-48a8-917d-6bbd2bb3f2b6",
+              "name": "source",
+              "value": "={{ $json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "d81bfde5-d42d-4c55-addf-007ddeec7a8d",
+              "name": "amount",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3d3e7e08-744c-4eb1-9eb0-01d0a77fce36",
+              "name": "date",
+              "value": "={{ { \"$date\": $json.createdAt } }}",
+              "type": "object"
+            },
+            {
+              "id": "9a9dc76a-81c8-4d9b-a71d-707d477a6701",
+              "name": "details",
+              "value": "={{ $json.details }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3232,
+        544
+      ],
+      "id": "fd05527a-1ca5-4b8c-bf52-067822e02862",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/income/n8nincome",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "icon",
+              "value": "={{ $json.icon }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ $json.source }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date.$date }}"
+            },
+            {
+              "name": "details",
+              "value": "={{ $json.details }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        544
+      ],
+      "id": "db962df3-5146-4ccc-bcb7-8c27311cafe1",
+      "name": "HTTP Request4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "168dfa32-ad43-48d0-9422-320398ae31ae",
+              "leftValue": "={{ $json.output }}",
+              "rightValue": "\"category\"",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2784,
+        -480
+      ],
+      "id": "8024542f-5cb9-4e45-b0b9-3b2798d642ed",
+      "name": "If4"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        5408,
+        -128
+      ],
+      "id": "30931fe7-fb4b-466e-ad72-20ce215aaa95",
+      "name": "No Operation, do nothing2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4384,
+        496
+      ],
+      "id": "c03985a8-f417-42cc-823a-04854338e828",
+      "name": "No Operation, do nothing3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4384,
+        -480
+      ],
+      "id": "b454aff2-2e8d-4d96-a8b9-db5fbfe1f2c2",
+      "name": "No Operation, do nothing4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "92cec7fb-e16e-4312-a840-6552738dfed5",
+              "leftValue": "={{ $json.body.fromMe }}",
+              "rightValue": "FALSE",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -32
+      ],
+      "id": "c22df652-1a6d-4baa-80eb-0909ff725fc3",
+      "name": "If5"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        864,
+        -128
+      ],
+      "id": "5675df51-5cb7-4e78-a6c1-1a6730d6425e",
+      "name": "No Operation, do nothing5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------------------------------------------------------------\n// 🔧 Funções auxiliares\n// -----------------------------------------------------------------------------\nfunction toObjectId(id) {\n  // Apenas valida e retorna o ID se for um hex válido de 24 caracteres\n  return (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id))\n    ? id\n    : id;\n}\n\nfunction toNativeDate(value) {\n  const d = new Date(value);\n  return isNaN(d.getTime()) ? new Date() : d;\n}\n\n// -----------------------------------------------------------------------------\n// 🔄 Processamento principal\n// -----------------------------------------------------------------------------\nconst now = new Date();\nconst items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.dados ?? item.json.output ?? item.json;\n  const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;\n\n  return {\n    json: {\n      userId: toObjectId(parsed.userId),\n      icon: parsed.icon || \"\",\n      source: parsed.source || \"\",\n      amount: Number(parsed.amount ?? 0),\n      date: toNativeDate(parsed.date),\n      details: parsed.details || \"\",\n      tipoMovimentacao: parsed.tipoMovimentacao || \"Receita\",\n      createdAt: now,\n      updatedAt: now,\n      __v: 0\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -32
+      ],
+      "id": "b1fe3260-85dc-4663-b1f3-43aab47b78a2",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d426a314-33b7-4b14-9efa-b561dab46f2c",
+              "name": "userId",
+              "value": "={{ $json.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "2748c91a-ffe3-4c1c-829a-23fffab1fd34",
+              "name": "icon",
+              "value": "={{ $json.icon }}",
+              "type": "string"
+            },
+            {
+              "id": "934937ef-f89f-48a8-917d-6bbd2bb3f2b6",
+              "name": "source",
+              "value": "={{ $json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "d81bfde5-d42d-4c55-addf-007ddeec7a8d",
+              "name": "amount",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3d3e7e08-744c-4eb1-9eb0-01d0a77fce36",
+              "name": "date",
+              "value": "={{ { \"$date\": $json.createdAt } }}",
+              "type": "object"
+            },
+            {
+              "id": "9a9dc76a-81c8-4d9b-a71d-707d477a6701",
+              "name": "details",
+              "value": "={{ $json.details }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4384,
+        -32
+      ],
+      "id": "91fe83af-3e4d-4098-8711-9966f6369d86",
+      "name": "Edit Fields5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/income/n8nincome",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "icon",
+              "value": "={{ $json.icon }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ $json.source }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date.$date }}"
+            },
+            {
+              "name": "details",
+              "value": "={{ $json.details }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4608,
+        -32
+      ],
+      "id": "8b8132b8-fb9a-4eb7-97b6-f90b3da489cb",
+      "name": "HTTP Request5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------------------------------------------------------------\n// 🔧 Funções auxiliares\n// -----------------------------------------------------------------------------\nfunction toObjectId(id) {\n  // Apenas valida e retorna o ID se for um hex válido de 24 caracteres\n  return (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id))\n    ? id\n    : id;\n}\n\nfunction toNativeDate(value) {\n  const d = new Date(value);\n  return isNaN(d.getTime()) ? new Date() : d;\n}\n\n// -----------------------------------------------------------------------------\n// 🔄 Processamento principal\n// -----------------------------------------------------------------------------\nconst now = new Date();\nconst items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.dados ?? item.json.output ?? item.json;\n  const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;\n\n  return {\n    json: {\n      userId: toObjectId(parsed.userId),\n      icon: parsed.icon || \"\",\n      source: parsed.source || \"\",\n      amount: Number(parsed.amount ?? 0),\n      date: toNativeDate(parsed.date),\n      details: parsed.details || \"\",\n      tipoMovimentacao: parsed.tipoMovimentacao || \"Receita\",\n      createdAt: now,\n      updatedAt: now,\n      __v: 0\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        -384
+      ],
+      "id": "1348945b-2913-4142-af50-2e5351763792",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d426a314-33b7-4b14-9efa-b561dab46f2c",
+              "name": "userId",
+              "value": "={{ $json.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "2748c91a-ffe3-4c1c-829a-23fffab1fd34",
+              "name": "icon",
+              "value": "={{ $json.icon }}",
+              "type": "string"
+            },
+            {
+              "id": "934937ef-f89f-48a8-917d-6bbd2bb3f2b6",
+              "name": "source",
+              "value": "={{ $json.source }}",
+              "type": "string"
+            },
+            {
+              "id": "d81bfde5-d42d-4c55-addf-007ddeec7a8d",
+              "name": "amount",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3d3e7e08-744c-4eb1-9eb0-01d0a77fce36",
+              "name": "date",
+              "value": "={{ { \"$date\": $json.createdAt } }}",
+              "type": "object"
+            },
+            {
+              "id": "9a9dc76a-81c8-4d9b-a71d-707d477a6701",
+              "name": "details",
+              "value": "={{ $json.details }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3232,
+        -384
+      ],
+      "id": "d50d7696-8ec8-46ce-a493-6390c48eebc7",
+      "name": "Edit Fields6"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/income/n8nincome",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "icon",
+              "value": "={{ $json.icon }}"
+            },
+            {
+              "name": "source",
+              "value": "={{ $json.source }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date.$date }}"
+            },
+            {
+              "name": "details",
+              "value": "={{ $json.details }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        -384
+      ],
+      "id": "506dc1c5-0b6b-473b-93d4-1eaf90a5fa18",
+      "name": "HTTP Request6"
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------------------------------------------------------------\n// 🔧 Funções auxiliares\n// -----------------------------------------------------------------------------\nfunction toObjectId(id) {\n  // Just validate and return the 24-character hex string as-is\n  return (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id))\n    ? id\n    : id;\n}\n\nfunction toNativeDate(value) {\n  const d = new Date(value);\n  return isNaN(d.getTime()) ? new Date() : d;\n}\n\n// -----------------------------------------------------------------------------\n// 🔄 Processamento principal\n// -----------------------------------------------------------------------------\nconst now = new Date();\nconst items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.dados ?? item.json.output ?? item.json;\n  const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;\n\n  return {\n    json: {\n      userId: toObjectId(parsed.userId),     // ✅ ObjectId real (não $oid)\n      icon: parsed.icon || \"\",\n      category: parsed.category || \"\",\n      amount: Number(parsed.amount ?? 0),\n      date: toNativeDate(parsed.date),\n      details: parsed.details || \"\",\n      tipoMovimentacao: parsed.tipoMovimentacao || \"\",\n      createdAt: now,\n      updatedAt: now,\n      __v: 0\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4160,
+        -224
+      ],
+      "id": "19cd45a4-63b5-4721-bc2c-3f98976e593a",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d426a314-33b7-4b14-9efa-b561dab46f2c",
+              "name": "userId",
+              "value": "={{ $json.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "2748c91a-ffe3-4c1c-829a-23fffab1fd34",
+              "name": "icon",
+              "value": "={{ $json.icon }}",
+              "type": "string"
+            },
+            {
+              "id": "934937ef-f89f-48a8-917d-6bbd2bb3f2b6",
+              "name": "category",
+              "value": "={{ $json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "d81bfde5-d42d-4c55-addf-007ddeec7a8d",
+              "name": "amount",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3d3e7e08-744c-4eb1-9eb0-01d0a77fce36",
+              "name": "date",
+              "value": "={{ { \"$date\": $json.createdAt } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4384,
+        -224
+      ],
+      "id": "f1650247-6b6b-45f9-919f-115019e76522",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/expense/n8n",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "icon",
+              "value": "={{ $json.icon }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date.$date }}"
+            },
+            {
+              "name": "=details",
+              "value": "={{ $('Code in JavaScript4').item.json.details }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4608,
+        -224
+      ],
+      "id": "239f6a28-b7e4-413b-bd4c-782032fd6a51",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// -----------------------------------------------------------------------------\n// 🔧 Funções auxiliares\n// -----------------------------------------------------------------------------\nfunction toObjectId(id) {\n  // Just validate and return the 24-character hex string as-is\n  return (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id))\n    ? id\n    : id;\n}\n\nfunction toNativeDate(value) {\n  const d = new Date(value);\n  return isNaN(d.getTime()) ? new Date() : d;\n}\n\n// -----------------------------------------------------------------------------\n// 🔄 Processamento principal\n// -----------------------------------------------------------------------------\nconst now = new Date();\nconst items = $input.all();\n\nreturn items.map(item => {\n  const raw = item.json.dados ?? item.json.output ?? item.json;\n  const parsed = (typeof raw === 'string') ? JSON.parse(raw) : raw;\n\n  return {\n    json: {\n      userId: toObjectId(parsed.userId),     // ✅ ObjectId real (não $oid)\n      icon: parsed.icon || \"\",\n      category: parsed.category || \"\",\n      amount: Number(parsed.amount ?? 0),\n      date: toNativeDate(parsed.date),\n      details: parsed.details || \"\",\n      tipoMovimentacao: parsed.tipoMovimentacao || \"\",\n      createdAt: now,\n      updatedAt: now,\n      __v: 0\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        -576
+      ],
+      "id": "e6e42333-f461-4bd6-8ad5-e552a526816f",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d426a314-33b7-4b14-9efa-b561dab46f2c",
+              "name": "userId",
+              "value": "={{ $json.userId }}",
+              "type": "string"
+            },
+            {
+              "id": "2748c91a-ffe3-4c1c-829a-23fffab1fd34",
+              "name": "icon",
+              "value": "={{ $json.icon }}",
+              "type": "string"
+            },
+            {
+              "id": "934937ef-f89f-48a8-917d-6bbd2bb3f2b6",
+              "name": "category",
+              "value": "={{ $json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "d81bfde5-d42d-4c55-addf-007ddeec7a8d",
+              "name": "amount",
+              "value": "={{ $json.amount }}",
+              "type": "number"
+            },
+            {
+              "id": "3d3e7e08-744c-4eb1-9eb0-01d0a77fce36",
+              "name": "date",
+              "value": "={{ { \"$date\": $json.createdAt } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3232,
+        -576
+      ],
+      "id": "6826f942-9f20-4f08-bc1a-d54ffc8827bc",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://meu-bolso-backend-beta.vercel.app/api/v1/expense/n8n",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "userId",
+              "value": "={{ $json.userId }}"
+            },
+            {
+              "name": "icon",
+              "value": "={{ $json.icon }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            },
+            {
+              "name": "amount",
+              "value": "={{ $json.amount }}"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.date.$date }}"
+            },
+            {
+              "name": "=details",
+              "value": "={{ $('Code in JavaScript5').item.json.details }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3520,
+        -576
+      ],
+      "id": "4761b724-46a6-42a0-a9fb-6b9d79748ca8",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "description": "Use essa tool para enviar ao Sub-Workflow os dados id, query e phone.",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "6SWnHKJlkyVnyGLi"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('HTTP Request1').item.json.id }}",
+            "query": "={{ $json.text }}",
+            "phone": "={{ $('Agrupa informações').item.json.phone }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        2576,
+        864
+      ],
+      "id": "f0bd8314-67bb-4f87-aa03-26d72a179635",
+      "name": "Subfluxo"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "\"category\"",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "72aa03f0-f760-4d93-873a-c9496ba0d850"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "expenses"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1d78e308-4586-48b9-b7f8-0ba1876aa557",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "\"source\"",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "incomes"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1792956a-464b-4264-838e-a7d21732dac5",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "erro",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        3872,
+        -48
+      ],
+      "id": "0ba8f4bb-592d-42b3-96c2-1ac42c2ca557",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.whatsapp }}"
+            },
+            {
+              "name": "message",
+              "value": "=Olá! 👋\nPara registrar suas movimentações financeiras no sistema, basta enviar um áudio, imagem ou texto relatando o gasto ou a receita que deseja cadastrar.\n💡 Exemplos\nDespesa:\n\nÁudio: “Gastei 50 reais com gasolina hoje.”\n\nImagem: Foto do recibo ou nota fiscal.\n\nTexto: “Almoço de trabalho no valor de R$ 32,90.”\n\n\nReceita:\n\nÁudio: “Recebi 200 reais de um serviço de design.”\n\nImagem: Comprovante de pagamento.\n\nTexto: “Venda de produto no valor de R$ 150,00.”\n\nAssim que o envio for feito, nossa automação irá processar a mensagem e registrar automaticamente no banco de dados, classificando como receita ou despesa conforme o conteúdo informado."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4160,
+        160
+      ],
+      "id": "39b8bc83-2934-49fc-bf72-41d00a7ddd5e",
+      "name": "Resposta4"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "\"category\"",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "72aa03f0-f760-4d93-873a-c9496ba0d850"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "expenses"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1d78e308-4586-48b9-b7f8-0ba1876aa557",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "\"source\"",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "incomes"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1792956a-464b-4264-838e-a7d21732dac5",
+                    "leftValue": "={{ $json.output }}",
+                    "rightValue": "erro",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        2784,
+        624
+      ],
+      "id": "65dd2a94-4d57-4380-86f9-a6b8731ca85e",
+      "name": "Switch2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.z-api.io/instances/3E9324E32418814096AF9ADC54EDACF3/token/446653F8589B39F0374F9415/send-text",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "client-token",
+              "value": "F6a1d1113f3b24802b0d51d5964669c6bS"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $('Edit Fields').item.json.whatsapp }}"
+            },
+            {
+              "name": "message",
+              "value": "=Olá! 👋\nPara registrar suas movimentações financeiras no sistema, basta enviar um áudio, imagem ou texto relatando o gasto ou a receita que deseja cadastrar.\n💡 Exemplos\nDespesa:\n\nÁudio: “Gastei 50 reais com gasolina hoje.”\n\nImagem: Foto do recibo ou nota fiscal.\n\nTexto: “Almoço de trabalho no valor de R$ 32,90.”\n\n\nReceita:\n\nÁudio: “Recebi 200 reais de um serviço de design.”\n\nImagem: Comprovante de pagamento.\n\nTexto: “Venda de produto no valor de R$ 150,00.”\n\nAssim que o envio for feito, nossa automação irá processar a mensagem e registrar automaticamente no banco de dados, classificando como receita ou despesa conforme o conteúdo informado."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3008,
+        736
+      ],
+      "id": "2a2f4bc2-5b46-4a54-b6e8-9aea36167c17",
+      "name": "Resposta5"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "6SWnHKJlkyVnyGLi"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone": "={{ $('Agrupa').item.json.whatsapp }}",
+            "query": "={{ $json.mensagens }}",
+            "id": "={{ $('Agrupa informações').item.json.id.$oid }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        3600,
+        80
+      ],
+      "id": "580635ef-e368-4d70-9fdf-025551313f0d",
+      "name": "SubFluxo1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Transform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Agrupa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Resposta3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupa": {
+      "main": [
+        [
+          {
+            "node": "Redis2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find documents": {
+      "main": [
+        [
+          {
+            "node": "Agrupa informações",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Transform": {
+      "main": [
+        [
+          {
+            "node": "Find documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupa informações": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta3": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Resposta1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain2": {
+      "main": [
+        [
+          {
+            "node": "Resposta2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta1": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta2": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If5": {
+      "main": [
+        [
+          {
+            "node": "No Operation, do nothing5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields5": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields6": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request6": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subfluxo": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Resposta5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SubFluxo1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "3fec8eab-d643-46a0-a371-ff000641afe4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf9d09873b902b02a83144b332a29fd7e2d70e4e82e219bd038235dffac24700"
+  },
+  "id": "C62XyDlDQTzfI45y",
+  "tags": []
+}
